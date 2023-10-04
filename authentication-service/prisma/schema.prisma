@@ -1,0 +1,91 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                  String    @id @default(auto()) @map("_id") @db.ObjectId
+  firstName           String
+  secondName          String
+  phoneNumber         Int
+  phoneNumberVerified DateTime?
+  email               String    @unique
+  emailVerified       DateTime?
+  statusCode          Int       @default(0)
+  image               String?
+  hashedPassword      String
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+}
+
+model Kyc {
+  id             String        @id @default(auto()) @map("_id") @db.ObjectId
+  businessName   String
+  companyTitle   String
+  legalName      String
+  info           String
+  website        String?
+  address        String
+  city           String
+  country        String
+  state          String
+  pinCode        String
+  geolocation    String
+  contactEmail   String
+  contactPhone   Int
+  bankDetails    BankDetails[]
+  pan            String
+  gstin          String
+  fssaiNo        String?
+  canceledCheque String
+  addressProof   String
+  idProof        String
+  locationAvail  String
+  ondc           Ondc[]
+  storetiming    StoreTiming[]
+  organization   String?
+  packageWeight  String?
+  hsn            String?
+  distrLicenseNo String?
+}
+
+model BankDetails {
+  id                String  @id @default(auto()) @map("_id") @db.ObjectId
+  accountHolderName String
+  accountNumber     Int
+  bankName          String
+  bankCity          String
+  branch            String
+  IfscCode          String
+  kycId             String? @db.ObjectId
+  kyc               Kyc?    @relation(fields: [kycId], references: [id])
+}
+
+model Ondc {
+  id                 String   @id @default(auto()) @map("_id") @db.ObjectId
+  timeToShip         String
+  cancellable        Boolean
+  returnable         Boolean
+  sellerPickupReturn Boolean?
+  availableCOD       Boolean?
+  defaultCategoryId  String
+  consumerCare       String
+  kycId              String?  @db.ObjectId
+  kyc                Kyc?     @relation(fields: [kycId], references: [id])
+}
+
+model StoreTiming {
+  id        String  @id @default(auto()) @map("_id") @db.ObjectId
+  type      Boolean
+  days      String
+  startTime String
+  endTime   String
+  kycId     String? @db.ObjectId
+  kyc       Kyc?    @relation(fields: [kycId], references: [id])
+}
