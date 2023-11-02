@@ -1,7 +1,7 @@
 import express from 'express';
-import login from '../controllers/login.controller'
+import {loginController} from '../controllers/login.controller'
 let routes = express.Router()
 
-routes.post('/', login)
+routes.post('/', loginController);
 
 export default routes

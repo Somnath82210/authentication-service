@@ -8,13 +8,14 @@ import morgan from 'morgan';
 dotenv.config();
 
 const app: Application = express();
-const port = process.env.PORT || 8080;
+const port = process.env.AUTHENTICATION_SERVICE_PORT || 8080;
 
+app.use(express.static('public/uploads'))
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({extended:true}))
 app.use(cors({origin:true}))
 app.use(helmet())
-app.use(morgan('dev'))
+app.use(morgan('combined'))
 app.use('/api/', routes)
 
 
