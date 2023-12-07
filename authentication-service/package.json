@@ -1,5 +1,5 @@
 {
-  "name": "aggregator",
+  "name": "Authentication",
   "version": "1.0.0",
   "description": "authentication with login",
   "main": "index.js",
