@@ -1,8 +1,8 @@
 import * as dotenv from 'dotenv';
 import { PrismaClient } from '@prisma/client';
 import jwtDecode from 'jwt-decode';
-import {stringToBool} from '../utils/stringToBool'
-
+import {stringToBool} from '../utils/helpers'
+import {prismaUserDataUrl,prismaKycUrl} from '../db/connect'
 
 
 dotenv.config()
@@ -10,12 +10,8 @@ export function kycService(data: any, file: any, userToken: any) {
     return new Promise(async (resolve, reject) => {
         try {
             if (data && userToken) {
-                let baseURL = process.env.DATABASE_URL;
                 let userID = await jwtDecode(userToken.split(" ")[1]) as any
-                let newURL = baseURL + "kycDatabase";
-                let userDataUrl = baseURL + "userDatabase";
-                let userConnection = new PrismaClient({ datasources: { db: { url: userDataUrl } } })
-                let userIDMatch = await userConnection.user.findMany({
+                let userIDMatch = await prismaUserDataUrl.user.findMany({
                     where: {
                         id: userID.id
                     },
@@ -24,11 +20,9 @@ export function kycService(data: any, file: any, userToken: any) {
                         kycStatus: true
                     }
                 })
-                await userConnection.$disconnect();
                 if (userIDMatch.length > 0 && userIDMatch[0].kycStatus===0) {
                     //pass the image path
-                    const prisma = new PrismaClient({ datasources: { db: { url: newURL } } })
-                    await prisma.kyc.create({
+                    await prismaKycUrl.kyc.create({
                         data: {
                             "businessName": data.businessName,
                             "companyTitle": data.companyTitle,
@@ -60,17 +54,15 @@ export function kycService(data: any, file: any, userToken: any) {
                             "userId": userIDMatch[0].id
                         }
                     }).then(async (response: any) => {
-                        console.log(response)
-                       await userConnection.user.update({
+                       await prismaUserDataUrl.user.update({
                             where:{
                                 id: userIDMatch[0].id
                             }, 
                             data:{
                                 kycStatus: 1
                             }
-                        }).then((response:any)=>{
-                            console.log("reponse from kyc", response)
-                        })
+                        });
+                        //resolve kyc data
                         resolve({ status: true, message: "Kyc done", data: { id: response.id, businessName: response.businessName } })
                     }).catch((err: any) => {
                         console.log("error during create kyc", err);
@@ -96,13 +88,8 @@ export function bankDetailsAdd(data: any, userToken: any) {
     return new Promise(async (resolve, reject) => {
         try {
             if (data && userToken) {
-                let baseURL = process.env.DATABASE_URL;
-                //kyc url
-                let newURL = baseURL + "kycDatabase";
-                let userDataUrl = baseURL + "userDatabase";
                 let userID = await jwtDecode(userToken.split(" ")[1]) as any
-                let userConnection = new PrismaClient({ datasources: { db: { url: userDataUrl } } })
-                let userIDMatch = await userConnection.user.findMany({
+                let userIDMatch = await prismaUserDataUrl.user.findMany({
                     where: {
                         id: userID.id
                     },
@@ -111,10 +98,8 @@ export function bankDetailsAdd(data: any, userToken: any) {
                         kycStatus: true
                     }
                 })
-                await userConnection.$disconnect();
                 if (userIDMatch.length > 0 && userIDMatch[0].kycStatus===1) {
-                    let prisma = new PrismaClient({ datasources: { db: { url: newURL } } })
-                    await prisma.bankDetails.create({
+                    await prismaKycUrl.bankDetails.create({
                         data: {
                             "accountHolderName": data.accountHolderName,
                             "accountNumber": Number(data.accountNumber),
@@ -125,7 +110,7 @@ export function bankDetailsAdd(data: any, userToken: any) {
                             "userId": userIDMatch[0].id
                         }
                     }).then(async(response: any) => {
-                        await userConnection.user.update({
+                        await prismaUserDataUrl.user.update({
                             where:{
                                 id: userIDMatch[0].id
                             }, 
@@ -133,11 +118,8 @@ export function bankDetailsAdd(data: any, userToken: any) {
                                 kycStatus: 2
                             }
                         })
-                        console.log("bank details", response)
-                        prisma.$disconnect()
                         resolve({ status: true, message: "Bank details added", data: { id: response.id, accountHolderName: response.accountHolderName } })
                     }).catch((err: any) => {
-                        prisma.$disconnect()
                         let errData = Object.values(err)[0];
                         console.log(err)
                         if (errData === "PrismaClientValidationError") {
@@ -147,6 +129,8 @@ export function bankDetailsAdd(data: any, userToken: any) {
                     })
                 } else if(userIDMatch[0].kycStatus===4) {
                     resolve({ status: false, message: "kyc done already" })
+                } else if(userIDMatch[0].kycStatus === 2){
+                    resolve({ status: false, message: "bank details added already" })
                 } else {
                     resolve({ status: false, message: "no kyc found" })
                 }
@@ -164,12 +148,8 @@ export function ondcAdd(data: any, userToken: any) {
     return new Promise(async (resolve, reject) => {
         try {
             if (data && userToken) {
-                let baseURL = process.env.DATABASE_URL;
-                let newURL = baseURL + "kycDatabase";
-                let userDataUrl = baseURL + "userDatabase";
                 let userID = await jwtDecode(userToken.split(" ")[1]) as any
-                let userConnection = new PrismaClient({ datasources: { db: { url: userDataUrl } } })
-                let userIDMatch = await userConnection.user.findMany({
+                let userIDMatch = await prismaUserDataUrl.user.findMany({
                     where: {
                         id: userID.id
                     },
@@ -178,14 +158,13 @@ export function ondcAdd(data: any, userToken: any) {
                         kycStatus:true
                     }
                 })
-                await userConnection.$disconnect();
                 if (userIDMatch.length > 0 && userIDMatch[0].kycStatus===2) {
-                    let prisma = new PrismaClient({ datasources: { db: { url: newURL } } })
+                   //changing string values to boolean
                     if(typeof data.cancellable==='string')data.cancellable = stringToBool(data.cancellable);
                    if(typeof data.returnable==='string') data.returnable = stringToBool(data.returnable);
                    if(typeof data.availableCOD==='string') data.availableCOD = stringToBool(data.availableCOD);
                    if(typeof data.sellerPickupReturn==='string') data.sellerPickupReturn = stringToBool(data.sellerPickupReturn);
-                    await prisma.ondc.create({
+                    await prismaKycUrl.ondc.create({
                         data: {
                             "timeToShip": data.timeToShip,
                             "cancellable": data.cancellable,
@@ -198,7 +177,7 @@ export function ondcAdd(data: any, userToken: any) {
                             "userId": userIDMatch[0].id
                         }
                     }).then(async (response: any) => {
-                        await userConnection.user.update({
+                        await prismaUserDataUrl.user.update({
                             where:{
                                 id: userIDMatch[0].id
                             }, 
@@ -206,11 +185,8 @@ export function ondcAdd(data: any, userToken: any) {
                                 kycStatus: 3
                             }
                         })
-                        console.log("ONDC details", response)
-                        prisma.$disconnect()
                         resolve({ status: true, message: "ONDC details added", data: { id: response.id } })
                     }).catch((err: any) => {
-                        prisma.$disconnect()
                         let errData = Object.values(err)[0];
                         console.log(err)
                         if (errData === "PrismaClientValidationError") {
@@ -218,8 +194,10 @@ export function ondcAdd(data: any, userToken: any) {
                         }
                         resolve({ status: false, message: "ondc validation error", data: err })
                     })
-                } else if(userIDMatch[0].kycStatus===4) {
+                } else if(userIDMatch[0].kycStatus===4 ) {
                     resolve({ status: false, message: "kyc done already" })
+                }else if(userIDMatch[0].kycStatus===3){
+                    resolve({ status: false, message: "ondc done already" })
                 } else {
                     resolve({ status: false, message: "no bank details found" })
                 }
@@ -237,12 +215,8 @@ export function storeTiming(data: any, userToken: any) {
     return new Promise(async (resolve, reject) => {
         try {
             if (data && userToken) {
-                let baseURL = process.env.DATABASE_URL;
-                let newURL = baseURL + "kycDatabase";
-                let userDataUrl = baseURL + "userDatabase";
                 let userID = await jwtDecode(userToken.split(" ")[1]) as any
-                let userConnection = new PrismaClient({ datasources: { db: { url: userDataUrl } } })
-                let userIDMatch = await userConnection.user.findMany({
+                let userIDMatch = await prismaUserDataUrl.user.findMany({
                     where: {
                         id: userID.id
                     },
@@ -251,10 +225,8 @@ export function storeTiming(data: any, userToken: any) {
                         kycStatus:true
                     }
                 })
-                await userConnection.$disconnect();
                 if (userIDMatch.length > 0 && userIDMatch[0].kycStatus===3) {
-                    let prisma = new PrismaClient({ datasources: { db: { url: newURL } } })
-                    await prisma.storeTiming.create({
+                    await prismaKycUrl.storeTiming.create({
                         data: {
                             "type": data.type,
                             "days": data.days,
@@ -263,19 +235,16 @@ export function storeTiming(data: any, userToken: any) {
                             "userId":userIDMatch[0].id
                         }
                     }).then(async(response: any) => {
-                       await  userConnection.user.update({
+                       await  prismaUserDataUrl.user.update({
                             where:{
                                 id: userIDMatch[0].id
                             }, 
                             data:{
                                 kycStatus: 4
                             }
-                        })
-                        console.log("store time details", response)
-                        prisma.$disconnect()
+                        })  
                         resolve({ status: true, message: "Store timing details added", data: { id: response.id } })
                     }).catch((err: any) => {
-                        prisma.$disconnect()
                         let errData = Object.values(err)[0];
                         console.log(err)
                         if (errData === "PrismaClientValidationError") {

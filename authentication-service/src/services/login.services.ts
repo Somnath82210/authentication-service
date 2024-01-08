@@ -3,17 +3,15 @@ import { PrismaClient } from '@prisma/client'
 import jwt from 'jsonwebtoken'
 import * as dotenv from 'dotenv';
 import {adminLevelCheck} from '../utils/types'
+import {prismaUserDataUrl,prismaKycUrl} from '../db/connect'
 dotenv.config()
 
 export function loginService(data: any) {
     return new Promise(async (resolve, reject) => {
         try {
             if (data && data.email !== "") {
-                let baseURL = process.env.DATABASE_URL;
-                let newURL = baseURL + "userDatabase"
-                const prisma = new PrismaClient({ datasources: { db: { url: newURL } } })
                 let email:string = data.email
-                let userData = await prisma.user.findMany({
+                let userData = await prismaUserDataUrl.user.findMany({
                     where: {
                         email: email
                     },
@@ -34,7 +32,6 @@ export function loginService(data: any) {
                     jwt.sign(userData[0], secretKey || "secret", function (err: any, token: any) {
                         if (err) {
                             console.log("error during token creation", err)
-                            prisma.$disconnect()
                             resolve({ status: false, error: "JWT error" })
                         }
                         console.log("logged in success")
@@ -59,21 +56,18 @@ export function loginService(data: any) {
 export function adminLevelCheck (token:string){
     return new Promise(async( resolve,reject)=>{
         try {
-            let baseURL = process.env.DATABASE_URL;
-            let newURL = baseURL + "userDatabase"
             if (typeof token === 'undefined'){
                 console.log("no token");
                 resolve({status:false, message:"no token"})
             }
             let splitToken  = token.split(" ")[1]
             let secret = process.env.JWT_SECRET as string;
-            const prisma = new PrismaClient({ datasources: { db: { url: newURL } } })
             await jwt.verify(splitToken,secret, async (err:any, decoded:any)=>{
                 if(err){
                     console.log("error in token", err);
                     resolve({status:false, message:"error in token"})
                 }
-                await prisma.user.findMany({
+                await prismaUserDataUrl.user.findMany({
                     where:{
                      id: decoded.id
                     }, 
@@ -81,7 +75,6 @@ export function adminLevelCheck (token:string){
                       isAdmin:true
                     }
                 }).then((response:adminLevelCheck)=>{
-                   prisma.$disconnect();
                    if(response.length>0){
                     resolve({status:true, message:"It is Admin"})
                    } else{

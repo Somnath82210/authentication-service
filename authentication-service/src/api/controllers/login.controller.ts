@@ -8,6 +8,7 @@ export async function loginController(req:Request, res:Response, next:NextFuncti
             email:req.body.email,
             hashedPassword:req.body.password
         }
+        console.log(data)
         let services :any = await loginService(data)
         if(services.status===true){
             res.status(200).json({success:true, message:"login success", token: services.data.token, email:services.data.email, statusCode:services.data.statusCode})

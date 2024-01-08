@@ -1,8 +1,11 @@
 import express from 'express';
-import {register,userAdminController} from '../controllers/register.controller'
+import {getUserSettingsController, register,updateUserController,userAdminController} from '../controllers/register.controller'
 let routes = express.Router()
-
-routes.post('/', register)
-routes.post('/useradmin',userAdminController)
+import multer from 'multer';
+let upload = multer({dest:'public/uploads/'});
+routes.post('/', register);
+routes.post('/useradmin',userAdminController);
+routes.get('/settings', getUserSettingsController);
+routes.put('/updatesettings', upload.any(), updateUserController);
 
 export default routes

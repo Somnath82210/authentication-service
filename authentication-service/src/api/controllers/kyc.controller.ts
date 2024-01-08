@@ -7,7 +7,6 @@ export async function kyc (req:Request,res:Response, next:NextFunction){
         let data:object= req.body;
         let file = req.files;
         let userToken = req.headers.authorization;
-        console.log("file--",file)
         let services : any = await kycService(data, file,userToken)
         if (services.status){
             res.status(200).json({success:true, message:services.message, data:services.data})
