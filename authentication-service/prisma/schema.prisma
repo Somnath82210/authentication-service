@@ -14,18 +14,18 @@ model User {
   firstName           String
   lastName            String
   phoneNumber         Int
-  phoneNumberVerified DateTime?
+  phoneNumberVerified Boolean       @default(false)
   email               String        @unique
-  emailVerified       DateTime?
+  emailVerified       Boolean       @default(false)
   statusCode          Int           @default(0)
-  profImage               String?
+  profImage           String?
   hashedPassword      String
   createdAt           DateTime      @default(now())
   updatedAt           DateTime      @updatedAt
   kycStatus           Int?          @default(0)
   isAdmin             Boolean?      @default(false)
   adminLevel          Int?          @default(0)
-  bio                 String? 
+  bio                 String?
   timeZone            String?
   parentId            String[]
   ondc                Ondc[]
@@ -69,12 +69,11 @@ model Products {
   userId                   String   @db.ObjectId
 }
 
-
 model UserAdmin {
-  id         String @id @default(auto()) @map("_id") @db.ObjectId
+  id         String  @id @default(auto()) @map("_id") @db.ObjectId
   adminLevel Int?
   adminName  String
-  email      String @unique
+  email      String  @unique
   adminId    String?
   user       User[]
 }

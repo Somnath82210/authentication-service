@@ -4,8 +4,9 @@ import { kycService,bankDetailsAdd,ondcAdd,storeTiming } from "../../services/ky
 
 export async function kyc (req:Request,res:Response, next:NextFunction){
     try {
-        let data:object= req.body;
+        let data:any= req.body;
         let file = req.files;
+        console.log("BODY AND FILE", data, file)
         let userToken = req.headers.authorization;
         let services : any = await kycService(data, file,userToken)
         if (services.status){

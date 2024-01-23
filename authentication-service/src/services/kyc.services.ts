@@ -1,5 +1,4 @@
 import * as dotenv from 'dotenv';
-import { PrismaClient } from '@prisma/client';
 import jwtDecode from 'jwt-decode';
 import {stringToBool} from '../utils/helpers'
 import {prismaUserDataUrl,prismaKycUrl} from '../db/connect'

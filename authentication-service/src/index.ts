@@ -13,7 +13,7 @@ const port = process.env.AUTHENTICATION_SERVICE_PORT || 8080;
 app.use(express.static('public/uploads'))
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({extended:true}))
-app.use(cors({origin:true}))
+app.use(cors())
 app.use(helmet())
 app.use(morgan('combined'))
 app.use('/api/', routes)
